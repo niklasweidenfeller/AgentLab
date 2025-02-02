@@ -252,7 +252,7 @@ FLAGS_GPT_4o = GenericPromptFlags(
 )
 
 AGENT_4o = GenericAgentArgs(
-    chat_model_args=CHAT_MODEL_ARGS_DICT["openai/gpt-4o-2024-05-13"],
+    chat_model_args=CHAT_MODEL_ARGS_DICT["openai/gpt-4o"],
     flags=FLAGS_GPT_4o,
 )
 
@@ -267,7 +267,7 @@ FLAGS_GPT_4o_VISION.obs.use_screenshot = True
 FLAGS_GPT_4o_VISION.obs.use_som = True
 
 AGENT_4o_VISION = GenericAgentArgs(
-    chat_model_args=CHAT_MODEL_ARGS_DICT["openai/gpt-4o-2024-05-13"],
+    chat_model_args=CHAT_MODEL_ARGS_DICT["openai/gpt-4o"],
     flags=FLAGS_GPT_4o_VISION,
 )
 
@@ -316,6 +316,6 @@ DEFAULT_RS_FLAGS = GenericPromptFlags(
 
 
 RANDOM_SEARCH_AGENT = GenericAgentArgs(
-    chat_model_args=CHAT_MODEL_ARGS_DICT["openai/gpt-4o-2024-05-13"],
+    chat_model_args=CHAT_MODEL_ARGS_DICT["openai/gpt-4o"],
     flags=DEFAULT_RS_FLAGS,
 )

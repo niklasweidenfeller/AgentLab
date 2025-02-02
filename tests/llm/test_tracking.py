@@ -6,7 +6,6 @@ import pytest
 
 import agentlab.llm.tracking as tracking
 from agentlab.llm.chat_api import (
-    AzureChatModel,
     OpenAIChatModel,
     OpenRouterChatModel,
     make_system_message,
@@ -30,7 +29,7 @@ OPENROUTER_MODELS = (
     "openai/o1-mini-2024-09-12",
     "openai/o1-preview-2024-09-12",
     "openai/gpt-4o-2024-08-06",
-    "openai/gpt-4o-2024-05-13",
+    "openai/gpt-4o",
     "anthropic/claude-3.5-sonnet:beta",
     "anthropic/claude-3.5-sonnet",
     "meta-llama/llama-3.1-405b-instruct",
@@ -139,32 +138,6 @@ def test_openai_chat_model():
         answer = chat_model(messages)
     assert "5" in answer.get("content")
     assert tracker.stats["cost"] > 0
-
-
-AZURE_OPENAI_API_KEY_AVAILABLE = (
-    os.environ.get("AZURE_OPENAI_API_KEY") is not None
-    and os.environ.get("AZURE_OPENAI_ENDPOINT") is not None
-)
-
-
-@pytest.mark.pricy
-@pytest.mark.skipif(
-    not AZURE_OPENAI_API_KEY_AVAILABLE, reason="Azure OpenAI API key is not available"
-)
-def test_azure_chat_model():
-    chat_model = AzureChatModel(model_name="gpt-35-turbo", deployment_name="gpt-35-turbo")
-    assert chat_model.input_cost > 0
-    assert chat_model.output_cost > 0
-
-    messages = [
-        make_system_message("You are an helpful virtual assistant"),
-        make_user_message("Give the third prime number"),
-    ]
-    with tracking.set_tracker() as tracker:
-        answer = chat_model(messages)
-    assert "5" in answer.get("content")
-    assert tracker.stats["cost"] > 0
-
 
 @pytest.mark.pricy
 @pytest.mark.skipif(not OPENROUTER_API_KEY_AVAILABLE, reason="OpenRouter API key is not available")

@@ -5,7 +5,8 @@ the command line.
 Copy this script and modify at will, but don't push your changes to the
 repository.
 """
-
+from dotenv import load_dotenv
+load_dotenv()
 import logging
 
 from agentlab.agents.generic_agent import (
@@ -20,8 +21,8 @@ from agentlab.experiments.study import Study
 logging.getLogger().setLevel(logging.INFO)
 
 # choose your agent or provide a new agent
-agent_args = [AGENT_4o_MINI]
-# agent_args = [AGENT_4o]
+# agent_args = [AGENT_4o_MINI]
+agent_args = [AGENT_4o]
 
 
 # ## select the benchmark to run on

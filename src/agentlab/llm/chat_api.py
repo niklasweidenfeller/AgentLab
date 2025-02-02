@@ -6,15 +6,15 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Optional
 
-import openai
 from huggingface_hub import InferenceClient
-from openai import AzureOpenAI, OpenAI
 
 import agentlab.llm.tracking as tracking
 from agentlab.llm.base_api import AbstractChatModel, BaseModelArgs
 from agentlab.llm.huggingface_utils import HFBaseChatModel
 from agentlab.llm.llm_utils import AIMessage, Discussion
 
+import openai
+from gen_ai_hub.proxy.native.openai import OpenAI
 
 def make_system_message(content: str) -> dict:
     return dict(role="system", content=content)
@@ -100,21 +100,6 @@ class OpenAIModelArgs(BaseModelArgs):
             model_name=self.model_name,
             temperature=self.temperature,
             max_tokens=self.max_new_tokens,
-        )
-
-
-@dataclass
-class AzureModelArgs(BaseModelArgs):
-    """Serializable object for instantiating a generic chat model with an Azure model."""
-
-    deployment_name: str = None
-
-    def make_model(self):
-        return AzureChatModel(
-            model_name=self.model_name,
-            temperature=self.temperature,
-            max_tokens=self.max_new_tokens,
-            deployment_name=self.deployment_name,
         )
 
 
@@ -221,7 +206,6 @@ class ChatModel(AbstractChatModel):
         max_tokens=100,
         max_retry=4,
         min_retry_wait_time=60,
-        api_key_env_var=None,
         client_class=OpenAI,
         client_args=None,
         pricing_func=None,
@@ -233,11 +217,6 @@ class ChatModel(AbstractChatModel):
         self.max_tokens = max_tokens
         self.max_retry = max_retry
         self.min_retry_wait_time = min_retry_wait_time
-
-        # Get the API key from the environment variable if not provided
-        if api_key_env_var:
-            api_key = api_key or os.getenv(api_key_env_var)
-        self.api_key = api_key
 
         # Get pricing information
         if pricing_func:
@@ -257,7 +236,6 @@ class ChatModel(AbstractChatModel):
 
         client_args = client_args or {}
         self.client = client_class(
-            api_key=api_key,
             **client_args,
         )
 
@@ -323,7 +301,6 @@ class OpenAIChatModel(ChatModel):
     def __init__(
         self,
         model_name,
-        api_key=None,
         temperature=0.5,
         max_tokens=100,
         max_retry=4,
@@ -331,12 +308,10 @@ class OpenAIChatModel(ChatModel):
     ):
         super().__init__(
             model_name=model_name,
-            api_key=api_key,
             temperature=temperature,
             max_tokens=max_tokens,
             max_retry=max_retry,
             min_retry_wait_time=min_retry_wait_time,
-            api_key_env_var="OPENAI_API_KEY",
             client_class=OpenAI,
             pricing_func=tracking.get_pricing_openai,
         )
@@ -346,7 +321,6 @@ class OpenRouterChatModel(ChatModel):
     def __init__(
         self,
         model_name,
-        api_key=None,
         temperature=0.5,
         max_tokens=100,
         max_retry=4,
@@ -357,50 +331,14 @@ class OpenRouterChatModel(ChatModel):
         }
         super().__init__(
             model_name=model_name,
-            api_key=api_key,
             temperature=temperature,
             max_tokens=max_tokens,
             max_retry=max_retry,
             min_retry_wait_time=min_retry_wait_time,
-            api_key_env_var="OPENROUTER_API_KEY",
             client_class=OpenAI,
             client_args=client_args,
             pricing_func=tracking.get_pricing_openrouter,
         )
-
-
-class AzureChatModel(ChatModel):
-    def __init__(
-        self,
-        model_name,
-        api_key=None,
-        deployment_name=None,
-        temperature=0.5,
-        max_tokens=100,
-        max_retry=4,
-        min_retry_wait_time=60,
-    ):
-        api_key = api_key or os.getenv("AZURE_OPENAI_API_KEY")
-        endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-        assert endpoint, "AZURE_OPENAI_ENDPOINT has to be defined in the environment"
-
-        client_args = {
-            "azure_deployment": deployment_name,
-            "azure_endpoint": endpoint,
-            "api_version": "2024-02-01",
-        }
-        super().__init__(
-            model_name=model_name,
-            api_key=api_key,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            max_retry=max_retry,
-            min_retry_wait_time=min_retry_wait_time,
-            client_class=AzureOpenAI,
-            client_args=client_args,
-            pricing_func=tracking.get_pricing_openai,
-        )
-
 
 class HuggingFaceURLChatModel(HFBaseChatModel):
     def __init__(

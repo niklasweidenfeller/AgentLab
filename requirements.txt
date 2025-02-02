@@ -6,7 +6,7 @@ pytest-xdist
 pytest-playwright
 dask
 distributed
-browsergym @ file:../BrowserGym/browsergym
+browsergym @ file:///Users/I539028/Desktop/master-thesis/BrowserGym/browsergym
 joblib>=1.2.0
 openai>=1.7,<2
 langchain_community

@@ -71,6 +71,11 @@ AgentLab requires python 3.11 or higher.
 pip install agentlab
 ```
 
+or for local development:
+```bash
+pip install -e .
+```
+
 If not done already, install Playwright:
 ```bash
 playwright install
@@ -98,6 +103,18 @@ export OPENROUTER_API_KEY=<your openrouter api key> # if openrouter models are u
 ```bash
 export AZURE_OPENAI_API_KEY=<your azure api key> # if using azure models
 export AZURE_OPENAI_ENDPOINT=<your endpoint> # if using azure models
+```
+</details>
+
+<details>
+<summary>Setup SAP AI Core API</summary>
+
+```bash
+export AICORE_CLIENT_ID=<your client id>
+export AICORE_CLIENT_SECRET=<your client secret>
+export AICORE_AUTH_URL=<your authentication url>
+export AICORE_BASE_URL=<your api base url>
+export AICORE_RESOURCE_GROUP=<your resource group>
 ```
 </details>
 

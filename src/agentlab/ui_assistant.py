@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 import argparse
 
 from browsergym.experiments.loop import EnvArgs, ExpArgs
@@ -30,7 +32,7 @@ def make_exp_args(agent_args: AgentArgs, start_url="https://www.google.com"):
             headless=False,
             record_video=True,
             wait_for_user_message=True,
-            viewport={"width": 1500, "height": 1280},
+            viewport={"width": 1920 // 2, "height": 1280 // 2},
             slow_mo=1000,
         ),
     )
@@ -44,7 +46,7 @@ def main():
     parser.add_argument(
         "--agent_config",
         type=str,
-        default="agentlab.agents.generic_agent.AGENT_4o_MINI",
+        default="agentlab.agents.generic_agent.AGENT_4o",
         help="""Python path to the agent config. Defaults to : "agentlab.agents.generic_agent.AGENT_4o".""",
     )
     parser.add_argument(
