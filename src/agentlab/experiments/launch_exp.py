@@ -82,8 +82,7 @@ def run_experiments(
         elif parallel_backend == "ray":
             from agentlab.experiments.graph_execution_ray import execute_task_graph, ray
 
-            ray.init()
-            # ray.init(num_cpus=n_jobs)
+            ray.init(num_cpus=n_jobs)
             try:
                 execute_task_graph(exp_args_list, avg_step_timeout=avg_step_timeout)
             finally:
