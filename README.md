@@ -84,9 +84,10 @@ playwright install
 Make sure to prepare the required benchmark according to the instructions provided in the [setup
 column](#-supported-benchmarks).
 
+Also make sure you've setup your AI Core credentials together with a valid OpenAI model deployment.
+
 ```bash
 export AGENTLAB_EXP_ROOT=<root directory of experiment results>  # defaults to $HOME/agentlab_results
-export OPENAI_API_KEY=<your openai api key> # if openai models are used
 ```
 
 <details>
