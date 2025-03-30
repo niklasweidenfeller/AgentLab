@@ -69,6 +69,8 @@ class GenericAgentArgs(AgentArgs):
             chat_model_args=self.chat_model_args, flags=self.flags, max_retry=self.max_retry
         )
 
+import os
+AUTH = (os.getenv("NEO4J_USER"), os.getenv("NEO4J_PASSWORD"))
 
 class GenericAgent(Agent):
 
@@ -78,6 +80,7 @@ class GenericAgent(Agent):
         flags: GenericPromptFlags,
         max_retry: int = 4,
     ):
+        self.navigation_graph = MemgraphNavigationGraph("bolt://localhost:7687", AUTH)
 
         self.chat_llm = chat_model_args.make_model()
         self.chat_model_args = chat_model_args
@@ -91,7 +94,24 @@ class GenericAgent(Agent):
         self.reset(seed=None)
 
     def obs_preprocessor(self, obs: dict) -> dict:
-        return self._obs_preprocessor(obs)
+        updated_obs = self._obs_preprocessor(obs)
+        if not self.flags.obs.use_graph:
+            return updated_obs
+
+        #######################################################
+        # Inference Time: Query the navigation graph to get   #
+        # possible next actions to take.                      #
+        #######################################################
+        url = build_abstract_url(updated_obs["url"])
+        url = replace_urls(url)
+
+        try:
+            current_node_id = self.navigation_graph.get_page_node_id(url)
+            updated_obs["graph_grounding"] = self.navigation_graph.infer_actions_at_position(current_node_id, n_hops=2) if current_node_id else None
+        except ValueError:
+            print(f"Could not find page node for url: {url}")
+            updated_obs["graph_grounding"] = None
+        return updated_obs
 
     @cost_tracker_decorator
     def get_action(self, obs):
@@ -119,6 +139,13 @@ class GenericAgent(Agent):
             max_iterations=max_trunc_itr,
             additional_prompts=system_prompt,
         )
+
+        print("***************")
+        print(system_prompt)
+        print("***************")
+        print(human_prompt)
+        print("***************")
+
         try:
             # TODO, we would need to further shrink the prompt if the retry
             # cause it to be too long
@@ -279,3 +306,178 @@ def get_action_post_hoc(agent: GenericAgent, obs: dict, ans_dict: dict):
         output += f"\n<action>\n{action}\n</action>"
 
     return system_prompt, instruction_prompt, output
+
+
+from urllib.parse import urlparse
+from dataclasses import dataclass
+from neo4j import Driver, GraphDatabase
+
+@dataclass
+class Webpage:
+    """ A class to represent a webpage. """
+    id: int | None
+    abstract_url: str
+
+class WebpageRepository:
+    def __init__(self, client: Driver):
+        self.client = client
+
+    def find_by_url(self, abstract_url: str) -> Webpage:
+        records, _, _ = self.client.execute_query(
+            "MATCH (a:URL) WHERE a.url = $url RETURN elementID(a), a.url",
+            url=abstract_url
+        )
+        if len(records) == 0:
+            raise ValueError(f'No webpage found with abstract URL: {abstract_url}')
+        return Webpage(id=records[0][0], abstract_url=records[0][1])
+
+class MemgraphNavigationGraph:
+    def __init__(self, uri: str, auth: tuple[str, str]):
+        self.client = GraphDatabase.driver(uri, auth=auth)
+        self.client.verify_connectivity()
+        self.webpage_repository = WebpageRepository(self.client)
+    
+    def __del__(self):
+        self.client.close()
+
+    """
+    RAG-based inference at runtime
+    """
+    def get_page_node_id(self, url: str) -> int:
+        return self.webpage_repository.find_by_url(url).id
+
+    def infer_actions_at_position(self, node_id: int, *, n_hops: int = 1):
+        return self.query_longest_paths(node_id)
+
+    def query_longest_paths(self, source_id: int):
+
+        MAX_PATH_LENGTH = 10
+
+        query = f'''
+        MATCH (a:URL), (b:URL)
+        WHERE elementID(a) = $source_id AND a <> b
+        CALL apoc.algo.allSimplePaths(a, b, 'ACTION', {MAX_PATH_LENGTH})
+        YIELD path
+
+        LIMIT 200
+
+        WITH COLLECT(path) as paths
+
+        CALL navgraph.getPrimePaths(paths)
+        YIELD primePath as path
+        WITH COLLECT(path) as paths
+        CALL navgraph.allNodesInPathHaveSameValueInNodePropertyArray(paths, 'flows')
+        YIELD path
+
+        WITH
+            [node in nodes(path) | node.url] as nodesInPath,
+            [rel in relationships(path) | rel.action + ": " + rel.target_line] as actionDescriptions, 
+            length(path) as pathLength
+        ORDER BY pathLength DESC
+        WITH
+            REDUCE(acc = [], i IN RANGE(0, pathLength - 2) |
+                acc + [nodesInPath[i], actionDescriptions[i]]
+            ) + [LAST(nodesInPath)] as nodeEdgeArray
+        RETURN nodeEdgeArray
+        '''
+
+        print("******Querying known paths ...*")
+        print(f"******Source ID: {source_id} ...*")
+              
+        records, _, _ = self.client.execute_query(
+            query,
+            source_id=source_id
+        )
+
+        paths = [r['nodeEdgeArray'] for r in records]
+        merged = [ self.merge_path(path) for path in paths ]
+        merged = [ path for path in merged if path ]
+        print("******Number of paths found: ", len(merged))
+
+        text = "\n\n".join([f"\t{i+1}. {path}" for i, path in enumerate(merged)]).strip()
+        return text if text else None
+
+    def merge_path(self, path):
+        if len(path) == 1:
+            print("Path length is 1")
+            return None
+        
+        parts = path
+        cleaned_parts = []
+
+        current_url = None
+
+        for part in parts:
+            if not current_url:
+                current_url = self.remove_host(part)
+            else:
+                cleaned_parts.append((current_url, part))
+                current_url = None
+
+        joined_tuples = [ f"({tup[0]}, {tup[1]})" for tup in cleaned_parts ]
+
+        # append the end state
+        if len(parts) % 2 != 0:
+            joined_tuples.append(f"({self.remove_host(parts[-1])})")
+
+        return " -> ".join(joined_tuples)
+
+    def remove_host(self, url: str) -> str:
+        parsed_url = urlparse(url)
+
+        cleaned = parsed_url.path
+        if parsed_url.query:
+            cleaned += "?" + parsed_url.query
+        if parsed_url.fragment:
+            cleaned += "#" + parsed_url.fragment    
+        return cleaned
+
+def build_abstract_url(url: str) -> str:
+    # first, we need to parse the URL
+    parsed_url = urlparse(url)
+    query = parsed_url.query
+
+    # convert the query into a dictionary
+    query_parts = query.split("&")
+    query_dict = {}
+
+    for part in query_parts:
+        if (part == ""):
+            continue
+        split_parts = part.split("=")
+        if (len(split_parts) == 0):
+            continue
+
+        if (len(split_parts) == 1):
+            key, value = part, ""
+        else:
+            key = split_parts[0]
+            value = "=".join(split_parts[1:])
+            query_dict[key] = value
+
+    # replace the values with placeholders
+    for key in query_dict:
+        query_dict[key] = f"<{key}>"
+
+    # convert the dictionary back into a query string
+    query = "&".join([f"{key}={value}" for key, value in query_dict.items()]) if len(query_dict.items()) > 0 else ""
+    fragment = "#<fragment>" if parsed_url.fragment else ""
+
+    # rebuild the URL
+    abstract_url = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}{query}{fragment}"
+    return abstract_url
+_to_replace = [
+    ("http://ec2-3-16-13-240.us-east-2.compute.amazonaws.com:3000", "https://osm.org"),
+    ("http://ec2-3-16-13-240.us-east-2.compute.amazonaws.com:7770", "https://shopping.com"),
+    ("http://ec2-3-16-13-240.us-east-2.compute.amazonaws.com:7780", "https://shopping.com"),
+    ("http://ec2-3-16-13-240.us-east-2.compute.amazonaws.com:8023", "https://vcs.com"),
+    ("http://ec2-3-16-13-240.us-east-2.compute.amazonaws.com:9980", "https://marketplace.com"),
+    ("http://ec2-3-16-13-240.us-east-2.compute.amazonaws.com:9999", "https://social-forum.com"),
+    ("https://dev275528.service-now.com", "https://servicenow.test"),
+]
+
+def replace_urls(url, to_replace = _to_replace):
+    for old, new in to_replace:
+        url = url.replace(old, new)
+    return url
+

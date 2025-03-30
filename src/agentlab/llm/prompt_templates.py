@@ -1,11 +1,6 @@
 from dataclasses import dataclass
 from typing import List
 
-"""
-To use this class, you should have the ``openai`` python package installed, and the
-environment variable ``OPENAI_API_KEY`` set with your API key.
-"""
-
 
 @dataclass
 class PromptTemplate:
