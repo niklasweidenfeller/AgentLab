@@ -3,7 +3,7 @@ from agentlab.agents.generic_agent.generic_agent_prompt import GenericPromptFlag
 from agentlab.agents import dynamic_prompting as dp
 from agentlab.llm.llm_configs import CHAT_MODEL_ARGS_DICT
 
-def create_agent_args(use_graph: bool = True, model_name: str = "openai/gpt-4o") -> list:
+def create_agent_args(use_graph: bool = True, model_name: str = "aicore/gpt-4o") -> list:
     flags = GenericPromptFlags(
         obs=GraphGroundingObsFlags(
             use_html=False,

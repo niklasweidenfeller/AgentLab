@@ -8,8 +8,8 @@ from typing import Optional
 
 import openai
 from huggingface_hub import InferenceClient
-from openai import AzureOpenAI
-from gen_ai_hub.proxy.native.openai import OpenAI
+from openai import AzureOpenAI, OpenAI
+from gen_ai_hub.proxy.native.openai import OpenAI as AiCoreOpenAI
 
 import agentlab.llm.tracking as tracking
 from agentlab.llm.base_api import AbstractChatModel, BaseModelArgs
@@ -103,6 +103,16 @@ class OpenAIModelArgs(BaseModelArgs):
             max_tokens=self.max_new_tokens,
         )
 
+class AiCoreOpenAIModelArgs(OpenAIModelArgs):
+    """Serializable object for instantiating a generic chat model with an OpenAI
+    model."""
+
+    def make_model(self):
+        return AiCoreOpenAiChatModel(
+            model_name=self.model_name,
+            temperature=self.temperature,
+            max_tokens=self.max_new_tokens,
+        )
 
 @dataclass
 class AzureModelArgs(BaseModelArgs):
@@ -222,6 +232,7 @@ class ChatModel(AbstractChatModel):
         max_tokens=100,
         max_retry=4,
         min_retry_wait_time=60,
+        api_key_env_var=None,
         client_class=OpenAI,
         client_args=None,
         pricing_func=None,
@@ -233,6 +244,11 @@ class ChatModel(AbstractChatModel):
         self.max_tokens = max_tokens
         self.max_retry = max_retry
         self.min_retry_wait_time = min_retry_wait_time
+
+        # Get the API key from the environment variable if not provided
+        if api_key_env_var:
+            api_key = api_key or os.getenv(api_key_env_var)
+        self.api_key = api_key
 
         # Get pricing information
         if pricing_func:
@@ -252,6 +268,7 @@ class ChatModel(AbstractChatModel):
 
         client_args = client_args or {}
         self.client = client_class(
+            api_key=api_key,
             **client_args,
         )
 
@@ -317,6 +334,33 @@ class OpenAIChatModel(ChatModel):
     def __init__(
         self,
         model_name,
+        api_key=None,
+        temperature=0.5,
+        max_tokens=100,
+        max_retry=4,
+        min_retry_wait_time=60,
+    ):
+        super().__init__(
+            model_name=model_name,
+            api_key=api_key,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            max_retry=max_retry,
+            min_retry_wait_time=min_retry_wait_time,
+            api_key_env_var="OPENAI_API_KEY",
+            client_class=OpenAI,
+            pricing_func=tracking.get_pricing_openai,
+        )
+
+class AiCoreOpenAiOverrideClient(AiCoreOpenAI):
+    def __init__(self, **kwargs):
+        del kwargs["api_key"]
+        super().__init__(**kwargs)
+
+class AiCoreOpenAiChatModel(ChatModel):
+    def __init__(
+        self,
+        model_name,
         temperature=0.5,
         max_tokens=100,
         max_retry=4,
@@ -328,15 +372,15 @@ class OpenAIChatModel(ChatModel):
             max_tokens=max_tokens,
             max_retry=max_retry,
             min_retry_wait_time=min_retry_wait_time,
-            client_class=OpenAI,
+            client_class=AiCoreOpenAiOverrideClient,
             pricing_func=tracking.get_pricing_openai,
         )
-
 
 class OpenRouterChatModel(ChatModel):
     def __init__(
         self,
         model_name,
+        api_key=None,
         temperature=0.5,
         max_tokens=100,
         max_retry=4,
@@ -347,10 +391,12 @@ class OpenRouterChatModel(ChatModel):
         }
         super().__init__(
             model_name=model_name,
+            api_key=api_key,
             temperature=temperature,
             max_tokens=max_tokens,
             max_retry=max_retry,
             min_retry_wait_time=min_retry_wait_time,
+            api_key_env_var="OPENROUTER_API_KEY",
             client_class=OpenAI,
             client_args=client_args,
             pricing_func=tracking.get_pricing_openrouter,
