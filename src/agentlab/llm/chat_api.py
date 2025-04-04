@@ -6,15 +6,15 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Optional
 
+import openai
 from huggingface_hub import InferenceClient
+from gen_ai_hub.proxy.native.openai import OpenAI
 
 import agentlab.llm.tracking as tracking
 from agentlab.llm.base_api import AbstractChatModel, BaseModelArgs
 from agentlab.llm.huggingface_utils import HFBaseChatModel
 from agentlab.llm.llm_utils import AIMessage, Discussion
 
-import openai
-from gen_ai_hub.proxy.native.openai import OpenAI
 
 def make_system_message(content: str) -> dict:
     return dict(role="system", content=content)

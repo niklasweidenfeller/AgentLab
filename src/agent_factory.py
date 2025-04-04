@@ -1,11 +1,11 @@
-from agentlab.agents.generic_agent.generic_agent import GenericAgentArgs
+from graph_grounding.agent_args import GraphGroundingAgentArgs, GraphGroundingObsFlags
 from agentlab.agents.generic_agent.generic_agent_prompt import GenericPromptFlags
 from agentlab.agents import dynamic_prompting as dp
 from agentlab.llm.llm_configs import CHAT_MODEL_ARGS_DICT
 
 def create_agent_args(use_graph: bool = True, model_name: str = "openai/gpt-4o") -> list:
     flags = GenericPromptFlags(
-        obs=dp.ObsFlags(
+        obs=GraphGroundingObsFlags(
             use_html=False,
             use_ax_tree=True,
             use_focused_element=True,
@@ -47,7 +47,7 @@ def create_agent_args(use_graph: bool = True, model_name: str = "openai/gpt-4o")
         extra_instructions=None,
     )
 
-    generic_agent_args = GenericAgentArgs(
+    generic_agent_args = GraphGroundingAgentArgs(
         chat_model_args=CHAT_MODEL_ARGS_DICT[model_name],
         flags=flags,
     )
