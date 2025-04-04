@@ -1,5 +1,4 @@
 from agentlab.llm.chat_api import (
-    AiCoreOpenAIModelArgs,
     AzureModelArgs,
     OpenAIModelArgs,
     OpenRouterModelArgs,
@@ -53,12 +52,6 @@ CHAT_MODEL_ARGS_DICT = {
     ),
     "openai/gpt-3.5-turbo-1106": OpenAIModelArgs(
         model_name="gpt-3.5-turbo-1106",
-        max_total_tokens=16_384,
-        max_input_tokens=16_384,
-        max_new_tokens=4096,
-    ),
-    "aicore/gpt-4o": AiCoreOpenAIModelArgs(
-        model_name="gpt-4o",
         max_total_tokens=16_384,
         max_input_tokens=16_384,
         max_new_tokens=4096,
