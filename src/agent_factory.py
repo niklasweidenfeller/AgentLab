@@ -3,31 +3,35 @@ from graph_grounding.agent_args import GraphGroundingAgentArgs, GraphGroundingOb
 from agentlab.agents.generic_agent.generic_agent_prompt import GenericPromptFlags
 from agentlab.agents import dynamic_prompting as dp
 
-def create_agent_args(use_graph: bool = True, model_name: str = "aicore/gpt-4o") -> list:
-    flags = GenericPromptFlags(
-        obs=GraphGroundingObsFlags(
-            use_html=False,
-            use_ax_tree=True,
-            use_focused_element=True,
-            use_error_logs=True,
-            use_history=True,
-            use_past_error_logs=False,
-            use_action_history=True,
-            # gpt-4o config except for this line
-            use_think_history=True,
-            use_diff=False,
-            html_type="pruned_html",
-            use_screenshot=False,
-            use_som=False,
-            extract_visible_tag=True,
-            extract_clickable_tag=True,
-            extract_coords="False",
-            filter_visible_elements_only=False,
+def create_observation_flags(use_graph: bool) -> GraphGroundingObsFlags:
+    return GraphGroundingObsFlags(
+        use_html=False,
+        use_ax_tree=True,
+        use_focused_element=True,
+        use_error_logs=True,
+        use_history=True,
+        use_past_error_logs=False,
+        use_action_history=True,
+        # gpt-4o config except for this line
+        use_think_history=True,
+        use_diff=False,
+        html_type="pruned_html",
+        use_screenshot=False,
+        use_som=False,
+        extract_visible_tag=True,
+        extract_clickable_tag=True,
+        extract_coords="False",
+        filter_visible_elements_only=False,
 
-            ###### GRAPH GROUNDING FLAGS ######
-            use_graph=use_graph,
-            ###################################
-        ),
+        ###### GRAPH GROUNDING FLAGS ######
+        use_graph=use_graph,
+        ###################################
+    )
+
+def create_agent_args(use_graph: bool, model_name: str) -> list:
+    obs = create_observation_flags(use_graph)
+    flags = GenericPromptFlags(
+        obs=obs,
         action=dp.ActionFlags(
             multi_actions=False,
             action_set="bid",

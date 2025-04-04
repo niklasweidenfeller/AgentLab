@@ -15,7 +15,7 @@ from enums import Benchmark, Backend
 logging.getLogger().setLevel(logging.INFO)
 
 # choose your agent or provide a new agent
-agent_args = create_agent_args()
+agent_args = create_agent_args(use_graph=True, model_name="aicore/gpt-4o")
 
 # ## select the benchmark to run on
 benchmark = Benchmark.WEBARENA.value
