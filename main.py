@@ -14,6 +14,9 @@ from enums import Benchmark, Backend
 
 logging.getLogger().setLevel(logging.INFO)
 
+# choose your agent or provide a new agent
+agent_args = create_agent_args()
+
 # ## select the benchmark to run on
 benchmark = Benchmark.WEBARENA.value
 
@@ -29,9 +32,6 @@ relaunch = False
 ## Number of parallel jobs
 n_jobs = 4  # Make sure to use 1 job when debugging in VSCode
 # n_jobs = -1  # to use all available cores
-
-
-agent_args = create_agent_args()
 
 
 if __name__ == "__main__":  # necessary for dask backend

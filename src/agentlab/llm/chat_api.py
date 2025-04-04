@@ -8,6 +8,7 @@ from typing import Optional
 
 import openai
 from huggingface_hub import InferenceClient
+from openai import AzureOpenAI
 from gen_ai_hub.proxy.native.openai import OpenAI
 
 import agentlab.llm.tracking as tracking
@@ -100,6 +101,21 @@ class OpenAIModelArgs(BaseModelArgs):
             model_name=self.model_name,
             temperature=self.temperature,
             max_tokens=self.max_new_tokens,
+        )
+
+
+@dataclass
+class AzureModelArgs(BaseModelArgs):
+    """Serializable object for instantiating a generic chat model with an Azure model."""
+
+    deployment_name: str = None
+
+    def make_model(self):
+        return AzureChatModel(
+            model_name=self.model_name,
+            temperature=self.temperature,
+            max_tokens=self.max_new_tokens,
+            deployment_name=self.deployment_name,
         )
 
 
@@ -339,6 +355,40 @@ class OpenRouterChatModel(ChatModel):
             client_args=client_args,
             pricing_func=tracking.get_pricing_openrouter,
         )
+
+
+class AzureChatModel(ChatModel):
+    def __init__(
+        self,
+        model_name,
+        api_key=None,
+        deployment_name=None,
+        temperature=0.5,
+        max_tokens=100,
+        max_retry=4,
+        min_retry_wait_time=60,
+    ):
+        api_key = api_key or os.getenv("AZURE_OPENAI_API_KEY")
+        endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+        assert endpoint, "AZURE_OPENAI_ENDPOINT has to be defined in the environment"
+
+        client_args = {
+            "azure_deployment": deployment_name,
+            "azure_endpoint": endpoint,
+            "api_version": "2024-02-01",
+        }
+        super().__init__(
+            model_name=model_name,
+            api_key=api_key,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            max_retry=max_retry,
+            min_retry_wait_time=min_retry_wait_time,
+            client_class=AzureOpenAI,
+            client_args=client_args,
+            pricing_func=tracking.get_pricing_openai,
+        )
+
 
 class HuggingFaceURLChatModel(HFBaseChatModel):
     def __init__(

@@ -1,4 +1,5 @@
 from agentlab.llm.chat_api import (
+    AzureModelArgs,
     OpenAIModelArgs,
     OpenRouterModelArgs,
     SelfHostedModelArgs,
@@ -43,6 +44,13 @@ CHAT_MODEL_ARGS_DICT = {
         max_new_tokens=4_096,  # I think this model has very small default value if we don't set max_new_tokens
         vision_support=True,
     ),
+    "openai/gpt-4o-2024-05-13": OpenAIModelArgs(
+        model_name="gpt-4o",
+        max_total_tokens=128_000,
+        max_input_tokens=128_000,
+        max_new_tokens=4_096,  # I think this model has very small default value if we don't set max_new_tokens
+        vision_support=True,
+    ),
     "openai/gpt-3.5-turbo-0125": OpenAIModelArgs(
         model_name="gpt-3.5-turbo-0125",
         max_total_tokens=16_384,
@@ -54,6 +62,37 @@ CHAT_MODEL_ARGS_DICT = {
         max_total_tokens=16_384,
         max_input_tokens=16_384,
         max_new_tokens=4096,
+    ),
+    "azure/gpt-35-turbo/gpt-35-turbo": AzureModelArgs(
+        model_name="gpt-35-turbo",
+        deployment_name="gpt-35-turbo",
+        max_total_tokens=8_192,
+        max_input_tokens=7500,
+        max_new_tokens=500,
+    ),
+    "azure/gpt-4o-2024-05-13": AzureModelArgs(
+        model_name="gpt-4o",
+        deployment_name="gpt-4o-2024-05-13",
+        max_total_tokens=128_000,
+        max_input_tokens=100_000,
+        max_new_tokens=16_384,
+        vision_support=True,
+    ),
+    "azure/gpt-4o-2024-08-06": AzureModelArgs(
+        model_name="gpt-4o",
+        deployment_name="gpt-4o-2024-08-06",
+        max_total_tokens=128_000,
+        max_input_tokens=128_000,
+        max_new_tokens=16_384,
+        vision_support=True,
+    ),
+    "azure/gpt-4o-mini-2024-07-18": AzureModelArgs(
+        model_name="gpt-4o-mini",
+        deployment_name="gpt-4o-mini-2024-07-18",
+        max_total_tokens=128_000,
+        max_input_tokens=128_000,
+        max_new_tokens=16_384,
+        vision_support=True,
     ),
     # ---------------- OSS LLMs ----------------#
     "meta-llama/Meta-Llama-3-70B-Instruct": SelfHostedModelArgs(
