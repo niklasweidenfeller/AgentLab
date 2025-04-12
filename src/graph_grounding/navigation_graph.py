@@ -41,8 +41,6 @@ class NavigationGraph:
 
         CALL navgraph.getPrimePaths(paths)
         YIELD primePath as path
-        WITH COLLECT(path) as paths
-        CALL navgraph.allNodesInPathHaveSameValueInNodePropertyArray(paths, 'flows')
         YIELD path
 
         WITH
