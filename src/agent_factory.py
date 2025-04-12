@@ -1,6 +1,5 @@
 from aicore.chat_model_args_ext import EXTENDED_CHAT_MODEL_ARGS_DICT
-from graph_grounding.agent_args import GraphGroundingAgentArgs, GraphGroundingObsFlags
-from agentlab.agents.generic_agent.generic_agent_prompt import GenericPromptFlags
+from graph_grounding.agent_args import GraphGroundingAgentArgs, GraphGroundingObsFlags, GraphGroundingPromptFlags
 from agentlab.agents import dynamic_prompting as dp
 
 def create_observation_flags(use_graph: bool) -> GraphGroundingObsFlags:
@@ -29,8 +28,8 @@ def create_observation_flags(use_graph: bool) -> GraphGroundingObsFlags:
     )
 
 def create_agent_args(use_graph: bool, model_name: str) -> list:
-    obs = create_observation_flags(use_graph)
-    flags = GenericPromptFlags(
+    obs: GraphGroundingObsFlags = create_observation_flags(use_graph)
+    flags = GraphGroundingPromptFlags(
         obs=obs,
         action=dp.ActionFlags(
             multi_actions=False,

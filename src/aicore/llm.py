@@ -7,7 +7,7 @@ class AiCoreOpenAIModelArgs(OpenAIModelArgs):
     """Serializable object for instantiating a generic chat model with an OpenAI
     model."""
 
-    def make_model(self):
+    def make_model(self) -> ChatModel:
         return AiCoreOpenAiChatModel(
             model_name=self.model_name,
             temperature=self.temperature,
