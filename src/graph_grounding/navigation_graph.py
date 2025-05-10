@@ -1,8 +1,10 @@
 from urllib.parse import urlparse
 from neo4j import GraphDatabase
 
-from .webpage_repository import WebpageRepository
+
 from .database import AUTH
+from .embeddings import Vectorizer
+from .webpage_repository import WebpageRepository
 
 def create_navigation_graph_client():
     return NavigationGraph("bolt://localhost:7687", AUTH)
@@ -12,7 +14,8 @@ class NavigationGraph:
         self.client = GraphDatabase.driver(uri, auth=auth)
         self.client.verify_connectivity()
         self.webpage_repository = WebpageRepository(self.client)
-    
+        self.embeddings = Vectorizer(model_name="text-embedding-3-small")
+
     def __del__(self):
         self.client.close()
 
@@ -105,3 +108,40 @@ class NavigationGraph:
         if parsed_url.fragment:
             cleaned += "#" + parsed_url.fragment    
         return cleaned
+
+    def find_by_url_and_task_iteration_2(self, abstract_url: str, task: str):
+        """
+        Find the graph grounding for a given URL and task
+        """
+
+        query = '''
+        MATCH (a:URL { url: $url })-[]-(s:STEP)-[]-(t:GOAL)
+        WITH a, t, vector.similarity.cosine(t.embedding, $embedding) AS score, MIN(s.step_id) AS start_step_id
+        WHERE score > 0.6
+        MATCH p=(t)-[]-(s:STEP { step_id: start_step_id })
+        WITH s
+        MATCH path=(s)-[:ACTION*1..]->(t:STEP)
+
+        WITH COLLECT(path) as paths
+
+        CALL navgraph.getPrimePaths(paths)
+        YIELD primePath as path
+        RETURN nodes(path) as nodes, relationships(path) as rels
+        '''
+        # MATCH p=(s)-[:ACTION*1..]-(t:STEP)
+        # RETURN p
+
+        records, _, _ = self.client.execute_query(
+            query,
+            url=abstract_url,
+            embedding=self.embeddings(task),
+        )
+
+        if len(records) == 0:
+            
+            print("******Number of result records: ", len(records))
+            print("Finding Iteration 2 graph grounding for URL: ", abstract_url, " and task: ", task)
+
+            
+            raise ValueError(f'No results found for URL: {abstract_url} and task: {task}')
+        return records
