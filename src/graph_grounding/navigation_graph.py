@@ -145,3 +145,52 @@ class NavigationGraph:
             
             raise ValueError(f'No results found for URL: {abstract_url} and task: {task}')
         return records
+
+    def find_by_task_iteration3(self, task_description: str):
+        stmt = """
+        MATCH (t:Task) WITH t.goal as goal
+        WITH goal, apoc.text.distance(goal, $task) as hammingDistance
+        ORDER BY hammingDistance ASC
+        LIMIT 3
+
+        WITH goal, hammingDistance
+
+        MATCH path=(t:Task { goal: goal })-[*..25]->(n)
+
+        WITH COLLECT(path) as paths, goal, hammingDistance
+
+        UNWIND paths as p1
+        WITH goal, hammingDistance, p1, [x IN paths WHERE x <> p1 AND all(r IN relationships(p1) WHERE r IN relationships(x))] AS supersets
+        WHERE size(supersets) = 0
+
+        RETURN goal, p1 as path, hammingDistance
+        ORDER BY hammingDistance ASC
+        """
+        with self.client.session() as session:
+            result = session.run(stmt, task=task_description)
+            result = result.data()
+
+
+        def stringify_path(path):
+            result = []
+            ctr = 1
+            
+            for i, item in enumerate(path):
+                if isinstance(item, str):
+                    result.append(item)
+                    continue
+
+                if i == 0:
+                    goal_text = item.get("description", None)
+                    result.append(f"Goal: {goal_text}")
+                else:
+                    node_text = item.get("description", None)
+                    result.append(f"{ctr}. {node_text}")
+                    ctr += 1
+
+            return "\n".join(result)
+
+
+        result = [ r['path'] for r in result ]
+        return [stringify_path(path) for path in result]
+

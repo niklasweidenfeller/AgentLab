@@ -12,10 +12,11 @@ class POCIterations(Enum):
     """
     Number of iterations for the POC
     """
-    ONE = 1
-    TWO = 2
+    ONE = "standard"
+    TWO = "advanced"
+    THREE = "llm-generated-graph"
 
-POC_ITERATION = POCIterations.TWO
+POC_ITERATION = POCIterations.THREE
 
 class GraphGroundingAgent(GenericAgent):
     """
@@ -82,6 +83,11 @@ class GraphGroundingAgent(GenericAgent):
             paths = [zip(g['nodes'], g['rels']) for g in grounding]
             stringified_paths = [stringify_path(path) for path in paths]
             return "\n".join(stringified_paths)
+  
+        elif poc_iteration == POCIterations.THREE:
+            task_description = current_observation["goal"]
+            paths = self.navigation_graph.find_by_task_iteration3(task_description)
+            return "\n\n".join(paths) if paths and len(paths) > 0 else None
         else:
             raise ValueError(f"Invalid POC iteration: {poc_iteration}")
 
