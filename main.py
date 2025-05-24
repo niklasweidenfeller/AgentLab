@@ -23,11 +23,11 @@ class Agents(Enum):
 agent = Agents.GENERIC_AGENT
 
 # choose your agent or provide a new agent
-agent_args = (
+agent_args = [
     create_graph_grounded_agent_args(use_graph=True, model_name="aicore/gpt-4o")
     if agent == Agents.GRAPH_GROUNDING_AGENT
     else get_reference_agent_args(model_name="aicore/gpt-4o")
-)
+]
 
 # ## select the benchmark to run on
 benchmark = Benchmark.WEBARENA.value
