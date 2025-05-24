@@ -2,6 +2,7 @@
 from agentlab.agents.agent_args import AgentArgs
 from agentlab.agents import dynamic_prompting as dp
 
+from agentlab_ext.genericagent_ext import GenericAgentArgsWithSleep
 from aicore.chat_model_args_ext import EXTENDED_CHAT_MODEL_ARGS_DICT
 
 def create_graph_grounded_agent_args(use_graph: bool, model_name: str) -> list[AgentArgs]:
@@ -103,7 +104,10 @@ def get_reference_agent_args(model_name: str) -> list[AgentArgs]:
         be_cautious=True,
         extra_instructions=None,
     )
-    return [GenericAgentArgs(
-        chat_model_args=EXTENDED_CHAT_MODEL_ARGS_DICT[model_name],
-        flags=prompt_flags
-    )]
+    return [
+        GenericAgentArgsWithSleep(
+            chat_model_args=EXTENDED_CHAT_MODEL_ARGS_DICT[model_name],
+            flags=prompt_flags,
+            sleep_time=5
+        )
+    ]

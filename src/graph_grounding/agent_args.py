@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from agentlab.agents.dynamic_prompting import ObsFlags
-from agentlab.agents.generic_agent.generic_agent import GenericAgentArgs
 from agentlab.agents.generic_agent.generic_agent_prompt import GenericPromptFlags
 from graph_grounding.agent import GraphGroundingAgent
 
+from ..agentlab_ext.genericagent_ext import GenericAgentArgsWithSleep
 
 @dataclass
 class GraphGroundingObsFlags(ObsFlags):
@@ -29,7 +29,7 @@ class GraphGroundingPromptFlags(GenericPromptFlags):
     """
     obs: GraphGroundingObsFlags
 
-class GraphGroundingAgentArgs(GenericAgentArgs):
+class GraphGroundingAgentArgs(GenericAgentArgsWithSleep):
     def __post_init__(self):
         try:  # some attributes might be temporarily args.CrossProd for hyperparameter generation
             self.agent_name = f"GraphGroundingAgent-{self.chat_model_args.model_name}".replace("/", "_")
@@ -41,4 +41,5 @@ class GraphGroundingAgentArgs(GenericAgentArgs):
             chat_model_args=self.chat_model_args,
             flags=self.flags,
             max_retry=self.max_retry,
+            sleep_time=self.sleep_time
         )

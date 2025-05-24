@@ -24,7 +24,6 @@ from agentlab.llm.tracking import cost_tracker_decorator
 
 from .generic_agent_prompt import GenericPromptFlags, MainPrompt
 
-from time import sleep
 
 @dataclass
 class GenericAgentArgs(AgentArgs):
@@ -92,8 +91,6 @@ class GenericAgent(Agent):
         self.reset(seed=None)
 
     def obs_preprocessor(self, obs: dict) -> dict:
-        print(f"Sleeping for 5 seconds to avoid AI core rate limit")
-        sleep(5)
         return self._obs_preprocessor(obs)
 
     @cost_tracker_decorator
@@ -282,4 +279,3 @@ def get_action_post_hoc(agent: GenericAgent, obs: dict, ans_dict: dict):
         output += f"\n<action>\n{action}\n</action>"
 
     return system_prompt, instruction_prompt, output
-

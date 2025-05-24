@@ -1,12 +1,10 @@
-
-import agentlab.agents.generic_agent.generic_agent as ga
-ga.MainPrompt = MainPromptWithGraph
-
+from agentlab.agents.generic_agent.generic_agent_prompt import MainPrompt
+from agentlab_ext.genericagent_ext import GenericAgentWithSleepAndExtractedMainPrompt
 from graph_grounding.embeddings import Vectorizer
+from graph_grounding.prompt.main_prompt import MainPromptWithGraph
 
 from .constant import POCIterations
 from .retriever import NavigationGraphGroundingRetrieverFactory
-from .prompt.main_prompt import MainPromptWithGraph
 from .llm import LLM
 from .navigation_graph import create_navigation_graph_client
 from .state_abstraction import StateAbstractorFactory
@@ -15,7 +13,7 @@ from time import sleep
 
 POC_ITERATION = POCIterations.FOUR
 
-class GraphGroundingAgent(ga.GenericAgent):
+class GraphGroundingAgent(GenericAgentWithSleepAndExtractedMainPrompt):
     """
     Graph Grounding Agent
     """
@@ -44,6 +42,18 @@ class GraphGroundingAgent(ga.GenericAgent):
         except Exception as e:
             print(f"Error retrieving graph grounding: {e}")
             return None
+
+    def get_main_prompt(self) -> MainPrompt:
+        return MainPromptWithGraph(
+            action_set=self.action_set,
+            obs_history=self.obs_history,
+            actions=self.actions,
+            memories=self.memories,
+            thoughts=self.thoughts,
+            previous_plan=self.plan,
+            step=self.plan_step,
+            flags=self.flags,
+        )
 
     def obs_preprocessor(self, obs):
         # sleep to avoid AI core rate limit
