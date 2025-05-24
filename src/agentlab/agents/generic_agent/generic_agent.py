@@ -100,7 +100,16 @@ class GenericAgent(Agent):
     def get_action(self, obs):
 
         self.obs_history.append(obs)
-        main_prompt = self.get_main_prompt()
+        main_prompt = MainPrompt(
+            action_set=self.action_set,
+            obs_history=self.obs_history,
+            actions=self.actions,
+            memories=self.memories,
+            thoughts=self.thoughts,
+            previous_plan=self.plan,
+            step=self.plan_step,
+            flags=self.flags,
+        )
 
         max_prompt_tokens, max_trunc_itr = self._get_maxes()
 
@@ -151,18 +160,6 @@ class GenericAgent(Agent):
             extra_info={"chat_model_args": asdict(self.chat_model_args)},
         )
         return ans_dict["action"], agent_info
-
-    def get_main_prompt(self):
-        return MainPrompt(
-            action_set=self.action_set,
-            obs_history=self.obs_history,
-            actions=self.actions,
-            memories=self.memories,
-            thoughts=self.thoughts,
-            previous_plan=self.plan,
-            step=self.plan_step,
-            flags=self.flags,
-        )
 
     def reset(self, seed=None):
         self.seed = seed
@@ -231,7 +228,16 @@ def get_action_post_hoc(agent: GenericAgent, obs: dict, ans_dict: dict):
 
     agent.obs_history.append(obs)
 
-    main_prompt = agent.get_main_prompt()
+    main_prompt = MainPrompt(
+        action_set=agent.action_set,
+        obs_history=agent.obs_history,
+        actions=agent.actions,
+        memories=agent.memories,
+        thoughts=agent.thoughts,
+        previous_plan=agent.plan,
+        step=agent.plan_step,
+        flags=agent.flags,
+    )
 
     max_prompt_tokens, max_trunc_itr = agent._get_maxes()
 

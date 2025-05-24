@@ -1,4 +1,7 @@
-from agentlab.agents.generic_agent.generic_agent import GenericAgent
+
+import agentlab.agents.generic_agent.generic_agent as ga
+ga.MainPrompt = MainPromptWithGraph
+
 from graph_grounding.embeddings import Vectorizer
 
 from .constant import POCIterations
@@ -12,13 +15,14 @@ from time import sleep
 
 POC_ITERATION = POCIterations.FOUR
 
-class GraphGroundingAgent(GenericAgent):
+class GraphGroundingAgent(ga.GenericAgent):
     """
     Graph Grounding Agent
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         self.navigation_graph = create_navigation_graph_client()
         self.llm = LLM("gpt-4o")
 
@@ -57,15 +61,3 @@ class GraphGroundingAgent(GenericAgent):
         #######################################################
         obs["graph_grounding"] = self._get_graph_grounding(obs)
         return obs
-
-    def get_main_prompt(self):
-        return MainPromptWithGraph(
-            action_set=self.action_set,
-            obs_history=self.obs_history,
-            actions=self.actions,
-            memories=self.memories,
-            thoughts=self.thoughts,
-            previous_plan=self.plan,
-            step=self.plan_step,
-            flags=self.flags
-        )

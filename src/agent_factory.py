@@ -1,11 +1,13 @@
-from agentlab.agents.generic_agent.generic_agent import GenericAgentArgs
-from agentlab.agents.generic_agent.generic_agent_prompt import GenericPromptFlags
-from aicore.chat_model_args_ext import EXTENDED_CHAT_MODEL_ARGS_DICT
-from graph_grounding.agent_args import GraphGroundingAgentArgs, GraphGroundingObsFlags, GraphGroundingPromptFlags
+
+from agentlab.agents.agent_args import AgentArgs
 from agentlab.agents import dynamic_prompting as dp
 
-def create_observation_flags(use_graph: bool) -> GraphGroundingObsFlags:
-    return GraphGroundingObsFlags(
+from aicore.chat_model_args_ext import EXTENDED_CHAT_MODEL_ARGS_DICT
+
+def create_graph_grounded_agent_args(use_graph: bool, model_name: str) -> list[AgentArgs]:
+    from graph_grounding.agent_args import GraphGroundingAgentArgs, GraphGroundingObsFlags, GraphGroundingPromptFlags
+
+    obs: GraphGroundingObsFlags = GraphGroundingObsFlags(
         use_html=False,
         use_ax_tree=True,
         use_focused_element=True,
@@ -28,9 +30,6 @@ def create_observation_flags(use_graph: bool) -> GraphGroundingObsFlags:
         use_graph=use_graph,
         ###################################
     )
-
-def create_agent_args(use_graph: bool, model_name: str) -> list:
-    obs: GraphGroundingObsFlags = create_observation_flags(use_graph)
     flags = GraphGroundingPromptFlags(
         obs=obs,
         action=dp.ActionFlags(
@@ -59,7 +58,10 @@ def create_agent_args(use_graph: bool, model_name: str) -> list:
     return [generic_agent_args]
 
 
-def create_generic_agent_flags() -> GenericPromptFlags:
+def get_reference_agent_args(model_name: str) -> list[AgentArgs]:
+    from agentlab.agents.generic_agent.generic_agent import GenericAgentArgs
+    from agentlab.agents.generic_agent.generic_agent_prompt import GenericPromptFlags
+
     obs_flags = dp.ObsFlags(
         use_html=False,
         use_ax_tree=True,
@@ -101,11 +103,7 @@ def create_generic_agent_flags() -> GenericPromptFlags:
         be_cautious=True,
         extra_instructions=None,
     )
-    return prompt_flags
-
-def get_reference_agent_args(model_name: str) -> GenericAgentArgs:
-    base_flags = create_generic_agent_flags()
-    return GenericAgentArgs(
+    return [GenericAgentArgs(
         chat_model_args=EXTENDED_CHAT_MODEL_ARGS_DICT[model_name],
-        flags=base_flags
-    )
+        flags=prompt_flags
+    )]
