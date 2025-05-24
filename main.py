@@ -5,17 +5,29 @@ the command line.
 Copy this script and modify at will, but don't push your changes to the
 repository.
 """
+from enum import Enum
 from dotenv import load_dotenv
 load_dotenv()
 import logging
 from agentlab.experiments.study import Study
-from agent_factory import create_agent_args
+from agent_factory import create_agent_args as create_graph_grounded_agent_args, get_reference_agent_args
 from enums import Benchmark, Backend
 
 logging.getLogger().setLevel(logging.INFO)
 
+
+class Agents(Enum):
+    GENERIC_AGENT = "generic_agent"
+    GRAPH_GROUNDING_AGENT = "graph_grounding_agent"    
+
+agent = Agents.GENERIC_AGENT
+
 # choose your agent or provide a new agent
-agent_args = create_agent_args(use_graph=True, model_name="aicore/gpt-4o")
+agent_args = (
+    create_graph_grounded_agent_args(use_graph=True, model_name="aicore/gpt-4o")
+    if agent == Agents.GRAPH_GROUNDING_AGENT
+    else get_reference_agent_args(model_name="aicore/gpt-4o")
+)
 
 # ## select the benchmark to run on
 benchmark = Benchmark.WEBARENA.value
@@ -30,7 +42,7 @@ reproducibility_mode = False
 relaunch = False
 
 ## Number of parallel jobs
-n_jobs = 4  # Make sure to use 1 job when debugging in VSCode
+n_jobs = 6  # Make sure to use 1 job when debugging in VSCode
 # n_jobs = -1  # to use all available cores
 
 
